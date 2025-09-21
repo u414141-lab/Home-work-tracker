@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
    
     <meta name="robots" content="index, follow">
-<title>Homework Tracker</title>
-<meta name="description" content="Free homework tracker web app to manage your assignments and deadlines easily.">
-    
+    <meta name="description" content="Free homework tracker web app to manage your assignments and deadlines easily.">
+    <meta name="keywords" content="homework tracker, assignment manager, student tool, free tracker">
+
     <title>Homework Tracker</title>
+
     <style>
         * {
             margin: 0;
@@ -410,7 +411,7 @@
         
         <div style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(102, 126, 234, 0.1); border-radius: 10px;">
             <p style="color: #667eea; font-weight: 600; margin: 0;">
-                📖 Created by: Nothing2Game  | subscribe!
+                📖 Created by: Nothing2Game | subscribe!
             </p>
         </div>
     </div>
@@ -444,7 +445,6 @@
 
             homeworkData.push(homework);
             
-            // Clear form
             document.getElementById('subject').value = '';
             document.getElementById('title').value = '';
             document.getElementById('dueDate').value = '';
@@ -488,11 +488,8 @@
 
         function filterHomework(filter) {
             currentFilter = filter;
-            
-            // Update filter buttons
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-            
             updateDisplay();
         }
 
@@ -537,16 +534,11 @@
                 return;
             }
 
-            // Sort by due date (closest first), then by priority
             filteredHomework.sort((a, b) => {
-                if (a.completed !== b.completed) {
-                    return a.completed - b.completed; // Non-completed first
-                }
+                if (a.completed !== b.completed) return a.completed - b.completed;
                 
                 const priorityOrder = { high: 3, medium: 2, low: 1 };
-                if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-                    return priorityOrder[b.priority] - priorityOrder[a.priority];
-                }
+                if (priorityOrder[a.priority] !== priorityOrder[b.priority]) return priorityOrder[b.priority] - priorityOrder[a.priority];
                 
                 return new Date(a.dueDate) - new Date(b.dueDate);
             });
@@ -558,45 +550,27 @@
                         <div class="priority-badge priority-${homework.priority}">${homework.priority} priority</div>
                     </div>
                     <div class="homework-details">
-                        <div class="detail-item">
-                            <div class="detail-icon">📖</div>
-                            <span><strong>Subject:</strong> ${homework.subject}</span>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-icon">📅</div>
-                            <span><strong>Due:</strong> ${formatDate(homework.dueDate)}</span>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-icon">➕</div>
-                            <span><strong>Added:</strong> ${homework.addedDate}</span>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-icon">${homework.completed ? '✅' : '⏳'}</div>
-                            <span><strong>Status:</strong> ${homework.completed ? 'Completed' : 'Pending'}</span>
-                        </div>
+                        <div class="detail-item"><div class="detail-icon">📖</div><span><strong>Subject:</strong> ${homework.subject}</span></div>
+                        <div class="detail-item"><div class="detail-icon">📅</div><span><strong>Due:</strong> ${formatDate(homework.dueDate)}</span></div>
+                        <div class="detail-item"><div class="detail-icon">➕</div><span><strong>Added:</strong> ${homework.addedDate}</span></div>
+                        <div class="detail-item"><div class="detail-icon">${homework.completed ? '✅' : '⏳'}</div><span><strong>Status:</strong> ${homework.completed ? 'Completed' : 'Pending'}</span></div>
                     </div>
                     ${homework.description ? `<div class="homework-description">"${homework.description}"</div>` : ''}
                     <div class="homework-actions">
-                        <button class="action-btn ${homework.completed ? 'undo-btn' : 'complete-btn'}" 
-                                onclick="toggleComplete(${homework.id})">
+                        <button class="action-btn ${homework.completed ? 'undo-btn' : 'complete-btn'}" onclick="toggleComplete(${homework.id})">
                             ${homework.completed ? 'Mark Pending' : 'Mark Complete'}
                         </button>
-                        <button class="action-btn delete-btn" onclick="deleteHomework(${homework.id})">
-                            Delete
-                        </button>
+                        <button class="action-btn delete-btn" onclick="deleteHomework(${homework.id})">Delete</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // Set default due date to tomorrow
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         document.getElementById('dueDate').value = tomorrow.toISOString().split('T')[0];
 
-        // Initial display
         updateDisplay();
     </script>
 </body>
 </html>
-
