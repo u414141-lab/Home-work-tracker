@@ -322,6 +322,41 @@
             color: white;
         }
 
+        .data-management {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .data-btn {
+            padding: 8px 16px;
+            border: 2px solid #764ba2;
+            background: white;
+            color: #764ba2;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .data-btn:hover {
+            background: #764ba2;
+            color: white;
+        }
+
+        .clear-btn {
+            border-color: #F44336;
+            color: #F44336;
+        }
+
+        .clear-btn:hover {
+            background: #F44336;
+            color: white;
+        }
+
         .footer {
             text-align: center;
             margin-top: 30px;
@@ -361,6 +396,25 @@
             fill: #ff0000;
         }
 
+        .save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .save-indicator.show {
+            opacity: 1;
+        }
+
         @media (max-width: 600px) {
             .form-row {
                 flex-direction: column;
@@ -374,10 +428,16 @@
             .homework-details {
                 grid-template-columns: 1fr;
             }
+            
+            .data-management {
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="save-indicator" id="saveIndicator">✅ Data saved automatically</div>
+    
     <div class="container">
         <h1>📚 Homework Tracker</h1>
         
@@ -433,6 +493,14 @@
             <button class="add-btn" onclick="addHomework()">Add Homework</button>
         </div>
 
+        <div class="data-management">
+            <strong>Data Management:</strong>
+            <button class="data-btn" onclick="exportData()">📥 Export Data</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+            <button class="data-btn" onclick="document.getElementById('importFile').click()">📤 Import Data</button>
+            <button class="data-btn clear-btn" onclick="clearAllData()">🗑️ Clear All Data</button>
+        </div>
+
         <div class="filter-section">
             <strong>Filter by:</strong>
             <button class="filter-btn active" onclick="filterHomework('all')">All</button>
@@ -462,6 +530,42 @@
     <script>
         let homeworkData = [];
         let currentFilter = 'all';
+        const STORAGE_KEY = 'homeworkTrackerData';
+
+        // Load data from localStorage on page load
+        function loadData() {
+            try {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    homeworkData = JSON.parse(savedData);
+                    console.log('Data loaded from localStorage:', homeworkData.length + ' items');
+                }
+            } catch (error) {
+                console.error('Error loading data from localStorage:', error);
+                homeworkData = [];
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(homeworkData));
+                showSaveIndicator();
+                console.log('Data saved to localStorage:', homeworkData.length + ' items');
+            } catch (error) {
+                console.error('Error saving data to localStorage:', error);
+                alert('Error saving data. Your browser storage might be full.');
+            }
+        }
+
+        // Show save indicator
+        function showSaveIndicator() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
 
         function addHomework() {
             const subject = document.getElementById('subject').value.trim();
@@ -494,6 +598,7 @@
             document.getElementById('priority').value = 'low';
             document.getElementById('description').value = '';
 
+            saveData();
             updateDisplay();
         }
 
@@ -501,6 +606,7 @@
             const homework = homeworkData.find(h => h.id === id);
             if (homework) {
                 homework.completed = !homework.completed;
+                saveData();
                 updateDisplay();
             }
         }
@@ -508,7 +614,64 @@
         function deleteHomework(id) {
             if (confirm('Are you sure you want to delete this homework?')) {
                 homeworkData = homeworkData.filter(h => h.id !== id);
+                saveData();
                 updateDisplay();
+            }
+        }
+
+        function exportData() {
+            try {
+                const dataStr = JSON.stringify(homeworkData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `homework_backup_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                alert('Error exporting data. Please try again.');
+            }
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        if (confirm(`This will replace your current ${homeworkData.length} homework items with ${importedData.length} imported items. Continue?`)) {
+                            homeworkData = importedData;
+                            saveData();
+                            updateDisplay();
+                            alert('Data imported successfully!');
+                        }
+                    } else {
+                        alert('Invalid file format. Please select a valid homework backup file.');
+                    }
+                } catch (error) {
+                    console.error('Error importing data:', error);
+                    alert('Error reading file. Please make sure it\'s a valid homework backup file.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function clearAllData() {
+            if (confirm(`Are you sure you want to delete all ${homeworkData.length} homework items? This cannot be undone!`)) {
+                if (confirm('Last chance! This will permanently delete all your homework data. Continue?')) {
+                    homeworkData = [];
+                    saveData();
+                    updateDisplay();
+                    alert('All data cleared successfully.');
+                }
             }
         }
 
@@ -609,11 +772,19 @@
             `).join('');
         }
 
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        document.getElementById('dueDate').value = tomorrow.toISOString().split('T')[0];
+        // Initialize the app
+        function initializeApp() {
+            loadData();
+            
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('dueDate').value = tomorrow.toISOString().split('T')[0];
 
-        updateDisplay();
+            updateDisplay();
+        }
+
+        // Run initialization when page loads
+        window.addEventListener('load', initializeApp);
     </script>
 </body>
 </html>
